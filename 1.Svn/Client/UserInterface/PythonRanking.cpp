@@ -4,6 +4,16 @@
 #include <memory>
 #include <string>
 
+CPythonRanking::CPythonRanking()
+{
+	vRankingContainer.reserve(RANKING_MAX_NUM);
+}
+
+CPythonRanking::~CPythonRanking()
+{
+	vRankingContainer.clear();
+}
+
 void CPythonRanking::RegisterRankingData(const char* name, int level, BYTE job, BYTE empire, const char* guild)
 {
 	vRankingContainer.emplace_back(std::make_shared<SRankingData>(name, level, job, empire, guild));
@@ -20,31 +30,17 @@ size_t CPythonRanking::GetRankCount() const
 	return vRankingContainer.size();
 }
 
-CPythonRanking::SRankingData* CPythonRanking::GetRankByLine(std::uint16_t dwArrayIndex) const
+CPythonRanking::SRankingData* CPythonRanking::GetRankByLine(std::uint16_t RankIndex) const
 {
-	if (dwArrayIndex >= GetRankCount())
-		return nullptr;
-
-	return vRankingContainer.at(dwArrayIndex).get();
+	return (RankIndex >= GetRankCount()) ? nullptr : vRankingContainer.at(RankIndex).get();
 }
 
 std::uint16_t CPythonRanking::GetRankMyLine() const
 {
-	auto it = std::find_if(vRankingContainer.begin(), vRankingContainer.end(), [](const std::shared_ptr<SRankingData>& r) { return !r->name.compare(IAbstractPlayer::GetSingleton().GetName()); });
-	if (it != vRankingContainer.end())
-		return std::distance(vRankingContainer.begin(), it) + 1;
+	auto it = std::find_if(vRankingContainer.begin(), vRankingContainer.end(), 
+		[](const std::shared_ptr<SRankingData>& r) { return 0 == r->sName.compare(IAbstractPlayer::GetSingleton().GetName()); });
 
-	return 0;
-}
-
-CPythonRanking::CPythonRanking()
-{
-	vRankingContainer.reserve(RANKING_MAX_NUM);
-}
-
-CPythonRanking::~CPythonRanking()
-{
-	vRankingContainer.clear();
+	return (it == vRankingContainer.end()) ? 0 : (std::distance(vRankingContainer.begin(), it) + 1);
 }
 
 /*Module*/
@@ -60,11 +56,11 @@ PyObject * rankingGetRankByLine(PyObject * poSelf, PyObject * poArgs)
 	if (!PyTuple_GetInteger(poArgs, 0, &iIndex))
 		return Py_BadArgument();
 
-	const auto Rank = CPythonRanking::Instance().GetRankByLine(iIndex);
-	if (!Rank)
+	const CPythonRanking::SRankingData* Rank = CPythonRanking::Instance().GetRankByLine(iIndex);
+	if (Rank == nullptr)
 		return Py_BuildException("Failed to find rank by index %d", iIndex);
 
-	return Py_BuildValue("siiis", Rank->name.c_str(), Rank->level, Rank->job, Rank->empire, Rank->guild.c_str());
+	return Py_BuildValue("siiis", Rank->sName.c_str(), Rank->iLevel, Rank->bJob, Rank->bEmpire, Rank->sGuild.c_str());
 }
 
 PyObject* rankingGetRankMyLine(PyObject* poSelf, PyObject* poArgs)

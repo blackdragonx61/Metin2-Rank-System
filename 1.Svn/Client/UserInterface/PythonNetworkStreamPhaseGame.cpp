@@ -26,15 +26,15 @@ bool CPythonNetworkStream::RecvRanking()
 		return false;
 	}
 
-	switch (Packet.subheader)
-	{
-	case RANK::SUBHEADER_RANKING_SEND:
-		CPythonRanking::Instance().RegisterRankingData(Packet.szName, Packet.level, Packet.job, Packet.empire, Packet.szGuildName);
-		break;
-	case RANK::SUBHEADER_RANKING_OPEN:
-		PyCallClassMemberFunc(m_apoPhaseWnd[PHASE_WINDOW_GAME], "BINARY_RANK_OPEN", Py_BuildValue("()"));
-		break;
+	CPythonRanking::Instance().ClearRankData();
+	
+	for (auto iPacketSize = Packet.wSize - sizeof(Packet); iPacketSize > 0; iPacketSize -= sizeof(TPacketGCRankingInfo)) {
+		TPacketGCRankingInfo SRankInfo;
+		if (Recv(sizeof(SRankInfo), &SRankInfo))
+			CPythonRanking::Instance().RegisterRankingData(SRankInfo.szName, SRankInfo.iLevel, SRankInfo.bJob, SRankInfo.bEmpire, SRankInfo.szGuildName);
 	}
+
+	PyCallClassMemberFunc(m_apoPhaseWnd[PHASE_WINDOW_GAME], "BINARY_RANK_OPEN", Py_BuildValue("()"));
 
 	return true;
 }

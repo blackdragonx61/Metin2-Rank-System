@@ -6,20 +6,23 @@ typedef struct packet_dead
 
 ///Add
 #if defined(__BL_RANKING__)
-enum RANK
+enum ERANKINFO
 {
-	SUBHEADER_RANKING_SEND,
-	SUBHEADER_RANKING_OPEN,
 	HEADER_GC_RANKING = 160,
 };
+
 typedef struct packet_ranking_send
 {
-	BYTE	header;
-	BYTE	subheader;
-	char	szName[CHARACTER_NAME_MAX_LEN + 1];
-	char	szGuildName[GUILD_NAME_MAX_LEN + 1];
-	int		level;
-	BYTE	job;
-	BYTE	empire;
+	BYTE bHeader;
+	WORD wSize;
 } TPacketGCRankingSend;
+
+typedef struct packet_ranking_info
+{
+	char	szName[CHARACTER_NAME_MAX_LEN + 1];
+	int		iLevel;
+	BYTE	bJob;
+	BYTE	bEmpire;
+	char	szGuildName[GUILD_NAME_MAX_LEN + 1];
+} TPacketGCRankingInfo;
 #endif
